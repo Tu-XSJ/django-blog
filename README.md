@@ -33,3 +33,10 @@
 ***异步写回数据库***
 - 配置redis的aof：每秒 刷盘（或者使用两台redis）
 - celery异步把数据持久化到mysql
+
+**分层**
+
+***使用service层处理复杂的redis逻辑***
+- redis的pipeline保证原子性
+- 先查缓存，没查到查数据库，然后写入缓存
+
