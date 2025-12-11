@@ -1,6 +1,10 @@
 import logging
+import random
+import time
+from django.core.cache import cache
 from django_redis import get_redis_connection
 from .models import Article,ReadRecord
+
 
 logger = logging.getLogger(__name__)
 
@@ -40,29 +44,41 @@ class ReadAndSaveService:
     #读数据
     def get_stats(self):
         """
-        先查缓存，没查到查数据库，并写入缓存
+        先查缓存，没查到,加锁，查数据库，并写入缓存
         """
         view_count = self.redis.get(self._key_view_count())
 
         if view_count is not None:
             return int(view_count)
 
-        return self._reload_from_db()
+        return self._reload_from_db_with_lock()
 
-    def _reload_from_db(self):
+    def _reload_from_db_with_lock(self):
+
+        lock_key = self.article_id
+        #获取一个分布式锁对象
+        #blocking_timeout=3 如果3秒抢不到锁就不抢了，直接放弃或者返回旧数据
+        with self.redis.lock(lock_key,timeout=5,blocking_timeout=3):
+            #第2重检查，可以在等等待锁的时候，就有人填数据了
+            view_count = self.redis.get(self._key_view_count())
+            if view_count is not None:
+                return int(view_count)
 
         try:
             #从数据库加载数据
             article = Article.objects.get(pk=self.article_id)
             db_views = article.view_count
-
+            expire_time = 8640+random.randint(0,3600)
             #写入redis
-            self.redis.set(self._key_view_count(),db_views,timeout=8640)
+            self.redis.set(self._key_view_count(),db_views,ex=expire_time)
 
             return db_views
-        except Exception as e:
+        except Article.DoesNotExist:
             #防止缓存穿透
-            self.redis.set(self._key_view_count(),0,timeout=60)
+            self.redis.set(self._key_view_count(),0,ex=60)
+            return 0
+        except Exception as e:
+            self.redis.set(self._key_view_count(),0,ex=60)
             return 0
 
         #3、同步逻辑(给Celery任务调用)

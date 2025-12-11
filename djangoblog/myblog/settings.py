@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -132,3 +132,20 @@ CACHES = {
     }
 }
 
+#Celery配置
+#Broker:消息中间件，Celery连这里获取任务
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
+
+#Result Backend:存储任务执行结果
+CELERY_RESULT_BACKEND = 'django-db'
+
+#时区设置
+CELERY_TIMEZONE = 'Asia/Shanghai'
+
+#定时任务配置。每隔一段时间同步一次数据
+CELERY_BEAT_SCHEDULE = {
+    'sync-view-30-seconds': {
+        'task': 'blog.tasks.sync_data_task',#指向要写的任务函数
+        'schedule': 30.0
+    }
+}
