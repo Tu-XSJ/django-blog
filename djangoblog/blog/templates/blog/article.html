@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ article.title }}</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .stats-box { font-size: 14px; color: #666; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        .highlight { color: #d9534f; font-weight: bold; }
+        .content { line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <h1>{{ article.title }}</h1>
+
+    <div class="stats-box">
+        阅读量: <span id="view-count" class="highlight">Loading...</span>
+    </div>
+
+    <div class="content">
+        {{ article.content }}
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 注意：这里要把 article.id 加上引号，防止 JS 语法错误
+            const articleId = "{{ article.id }}";
+
+            // 模拟随机用户
+            const userId = "user_" + Math.floor(Math.random() * 10000);
+
+            const apiEndpoint = `/api/article/${articleId}/stats/?user_id=${userId}`;
+            console.log("正在请求 API:", apiEndpoint);
+
+            fetch(apiEndpoint)
+                .then(response => response.json())
+                .then(res => {
+                    if (res.code === 200) {
+                        document.getElementById('view-count').innerText = res.data.views;
+                        console.log(`我是用户 ${res.data.user_id}, 当前阅读量: ${res.data.views}`);
+                    } else {
+                        console.error("API 返回错误:", res);
+                    }
+                })
+                .catch(err => {
+                    console.error("网络请求失败:", err);
+                    document.getElementById('view-count').innerText = "--";
+                });
+        });
+    </script>
+</body>
+</html>
