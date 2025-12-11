@@ -28,6 +28,7 @@ class ReadRecordManager(models.Manager):
         """
         # 转成 UUID
         user_ids = [UUID(uid) for uid in user_views.keys()]
+        
 
         # 查询已存在的记录
         exit_records = self.filter(article=article, user__in=user_ids)

@@ -27,6 +27,11 @@ class ReadAndSaveService:
 
     #写数据
     def record_view(self,user_id):
+        view_exists = self.redis.exists(self._key_view_count())
+        uv_exists = self.redis.exists(self._key_user_stats())
+
+        if not view_exists or not uv_exists:
+            self._reload_from_db_with_lock()
         try:
             #使用pipeline保证原子性
             pipe = self.redis.pipeline()
@@ -69,9 +74,19 @@ class ReadAndSaveService:
             #从数据库加载数据
             article = Article.objects.get(pk=self.article_id)
             db_views = article.view_count
+            read_records = ReadRecord.objects.filter(article=article)
+
+            uv_data={str(r.user_id): r.read_count for r in read_records}
+
+            pipe = self.redis.pipeline()
+
             expire_time = 8640+random.randint(0,3600)
             #写入redis
-            self.redis.set(self._key_view_count(),db_views,ex=expire_time)
+            pipe.set(self._key_view_count(),db_views,ex=expire_time)
+            if uv_data:
+                pipe.hmset(self._key_user_stats(),uv_data)
+                pipe.expire(self._key_user_stats(),expire_time)
+            pipe.execute()
 
             return db_views
         except Article.DoesNotExist:

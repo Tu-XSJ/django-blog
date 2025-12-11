@@ -26,9 +26,9 @@
         document.addEventListener("DOMContentLoaded", function() {
             // 注意：这里要把 article.id 加上引号，防止 JS 语法错误
             const articleId = "{{ article.id }}";
-
+            
             // 模拟随机用户
-            const userId = "user_" + Math.floor(Math.random() * 10000);
+           const userId = "11111111-1111-1111-1111-111111111111";
 
             const apiEndpoint = `/api/article/${articleId}/stats/?user_id=${userId}`;
             console.log("正在请求 API:", apiEndpoint);
