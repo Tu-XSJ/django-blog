@@ -65,6 +65,7 @@ class ReadAndSaveService:
                 return int(view_count)
 
         try:
+            print(f"Thread Safe DB Query: Article {self.article_id}")
             #从数据库加载数据
             article = Article.objects.get(pk=self.article_id)
             db_views = article.view_count

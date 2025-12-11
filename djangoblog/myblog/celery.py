@@ -1,6 +1,9 @@
 import os
 from celery import Celery
 
+import eventlet
+eventlet.monkey_patch()
+
 #1、设置默认的Django设置模块
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myblog.settings')
 
